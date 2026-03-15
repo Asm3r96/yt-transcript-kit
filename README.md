@@ -41,6 +41,50 @@ try {
 }
 ```
 
+## Using It In A Phone App
+
+For a React Native app, install the package and call it directly when the user pastes a YouTube URL.
+
+```bash
+npm install yt-transcript-kit
+```
+
+```ts
+import { fetchYouTubeTranscript } from 'yt-transcript-kit';
+
+async function handleYouTubeUrl(url: string) {
+  const transcript = await fetchYouTubeTranscript(url);
+
+  return {
+    title: transcript.title,
+    text: transcript.fullText,
+    languageCode: transcript.languageCode,
+    isGenerated: transcript.isGenerated,
+  };
+}
+```
+
+Typical app flow:
+
+1. User pastes a YouTube URL.
+2. Your app calls `fetchYouTubeTranscript(url)`.
+3. Your app gets the full transcript text.
+4. Your app sends that text to your AI prompt for summarizing or question answering.
+
+Example AI prompt shape:
+
+```ts
+const transcript = await fetchYouTubeTranscript(url);
+
+const prompt = [
+  'You are a helpful assistant.',
+  'Use only the provided YouTube transcript.',
+  `User request:\n${userPrompt || 'Summarize this video.'}`,
+  `Video title:\n${transcript.title ?? 'Unknown title'}`,
+  `Transcript:\n${transcript.fullText}`,
+].join('\n\n');
+```
+
 ## Advanced Usage
 
 ### Requesting Specific Languages
@@ -113,4 +157,3 @@ npm run smoke -- "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ## License
 
 MIT © [Asm3r96](https://github.com/Asm3r96)
-
