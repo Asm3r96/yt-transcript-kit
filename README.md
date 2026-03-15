@@ -1,19 +1,20 @@
 # yt-transcript-kit
 
-Lightweight YouTube transcript extraction for apps that want transcript text first, then decide what to do with it.
+[![NPM Version](https://img.shields.io/npm/v/yt-transcript-kit.svg)](https://www.npmjs.com/package/yt-transcript-kit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Issues](https://img.shields.io/github/issues/Asm3r96/yt-transcript-kit)](https://github.com/Asm3r96/yt-transcript-kit/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/Asm3r96/yt-transcript-kit)](https://github.com/Asm3r96/yt-transcript-kit/pulls)
+[![Types](https://img.shields.io/npm/types/yt-transcript-kit)](https://www.npmjs.com/package/yt-transcript-kit)
 
-## What it does
+Lightweight YouTube transcript extraction for apps that want transcript text first, then decide what to do with it. Built with TypeScript and zero runtime dependencies.
 
-- Accepts a YouTube URL or video ID
-- Resolves caption tracks
-- Fetches transcript text and timestamped segments
-- Returns plain data with typed errors
+## Key Features
 
-## What it does not do
-
-- It does not summarize the page
-- It does not answer questions for you
-- It does not bundle audio transcription fallback yet
+- **Robust Extraction**: Uses a hybrid approach (HTML + InnerTube API) for better reliability.
+- **Lightweight**: Zero runtime dependencies, tiny bundle size.
+- **Typed Errors**: Programmatic error handling with specific codes.
+- **Flexible**: Works in Node.js, React Native, and Browser Extensions.
+- **Multi-language**: Support for requesting specific languages with fallbacks.
 
 ## Install
 
@@ -21,71 +22,95 @@ Lightweight YouTube transcript extraction for apps that want transcript text fir
 npm install yt-transcript-kit
 ```
 
-## Works well in
-
-- Node.js CLIs
-- React Native apps
-- browser extensions
-
-## Less reliable in
-
-- regular browser websites without a backend proxy
-
-Direct YouTube requests in normal websites can run into browser CORS restrictions.
-
-## Usage
+## Quick Start
 
 ```ts
 import { fetchYouTubeTranscript } from 'yt-transcript-kit';
 
-const transcript = await fetchYouTubeTranscript('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-
-console.log(transcript.title);
-console.log(transcript.fullText);
-console.log(transcript.segments[0]);
-```
-
-## Returned shape
-
-```ts
-type YouTubeTranscriptResult = {
-  videoId: string;
-  title: string | null;
-  languageCode: string;
-  languageLabel: string | null;
-  isGenerated: boolean;
-  source: 'youtube_caption_track';
-  fullText: string;
-  segments: Array<{
-    text: string;
-    offset: number;
-    duration: number;
-  }>;
-}
-```
-
-## Error handling
-
-```ts
-import {
-  fetchYouTubeTranscript,
-  YouTubeTranscriptError,
-} from 'yt-transcript-kit';
-
 try {
-  const result = await fetchYouTubeTranscript('dQw4w9WgXcQ');
-  console.log(result.fullText);
+  const result = await fetchYouTubeTranscript('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  
+  console.log(`Title: ${result.title}`);
+  console.log(`Full Text: ${result.fullText.substring(0, 100)}...`);
+  
+  // Useful metadata
+  console.log(`Language: ${result.languageLabel} (${result.languageCode})`);
+  console.log(`Auto-generated: ${result.isGenerated}`);
 } catch (error) {
-  if (error instanceof YouTubeTranscriptError) {
-    console.error(error.code, error.message);
-  }
+  // Handle typed errors (Rate limited, Video unavailable, etc.)
 }
 ```
 
-## Local smoke test
+## Advanced Usage
+
+### Requesting Specific Languages
+
+You can specify preferred languages. The library will try to find the best match in order.
+
+```ts
+const transcript = await fetchYouTubeTranscript('videoId', {
+  languages: ['fr', 'de', 'en'], // Prefer French, then German, then English
+});
+```
+
+### Custom Fetch & AbortSignal
+
+Perfect for environments with unique fetch requirements or for adding timeouts.
+
+```ts
+const controller = new AbortController();
+
+const transcript = await fetchYouTubeTranscript('videoId', {
+  signal: controller.signal,
+  fetchImpl: customFetchWrapper, // e.g. with proxy support
+});
+```
+
+## Documentation
+
+- [**Contributing Guide**](./docs/CONTRIBUTING.md): Learn how to set up the project and submit PRs.
+- [**Architecture**](./docs/ARCHITECTURE.md): Deep dive into how the library extracts data from YouTube.
+- [**Security Policy**](./docs/SECURITY.md): How to report security vulnerabilities.
+- [**Changelog**](./docs/CHANGELOG.md): Track project history and updates.
+
+## Support Matrix
+
+| Environment | Status | Notes |
+| :--- | :--- | :--- |
+| **Node.js** | ✅ Supported | Requires Node 18+ for native fetch. |
+| **React Native** | ✅ Supported | Works great with the native fetch polyfill. |
+| **CLIs** | ✅ Supported | Excellent for building tools. |
+| **Web Browser** | ⚠️ Limited | Direct requests usually fail due to YouTube's CORS policy. Use a backend proxy. |
+| **Extensions** | ✅ Supported | Chrome extensions can bypass CORS with appropriate permissions. |
+
+## Error Codes
+
+When a request fails, the library throws a `YouTubeTranscriptError` with one of the following codes:
+
+- `INVALID_VIDEO_ID`: The provided URL or ID is not valid.
+- `VIDEO_UNAVAILABLE`: Video is private, deleted, or region-restricted.
+- `RATE_LIMITED`: YouTube has blocked your IP. Take a break or use a proxy.
+- `NO_TRANSCRIPT`: The video does not have any captions available.
+- `LANGUAGE_NOT_AVAILABLE`: Specific language requested was not found.
+- `REQUEST_FAILED`: General network or parsing error.
+
+## Development
 
 ```bash
+# Install dependencies
 npm install
-npm run smoke
-npx tsx scripts/smoke.ts "https://www.youtube.com/watch?v=LqN_ItMqovA"
+
+# Build the project
+npm run build
+
+# Run quality checks
+npm run typecheck
+
+# Run smoke test with a real URL
+npm run smoke -- "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
+
+## License
+
+MIT © [Asm3r96](https://github.com/Asm3r96)
+
