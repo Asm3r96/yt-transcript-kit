@@ -147,6 +147,9 @@ npm install
 # Build the project
 npm run build
 
+# Run unit tests
+npm run test
+
 # Run quality checks
 npm run typecheck
 

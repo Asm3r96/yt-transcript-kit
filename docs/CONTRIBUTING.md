@@ -30,9 +30,10 @@ By participating in this project, you agree to abide by our Code of Conduct (sta
 2. **Install dependencies**: `npm install`.
 3. **Make your changes**. If you're adding a feature or fixing a bug, please add appropriate tests or update the smoke test.
 4. **Ensure the code builds**: `npm run build`.
-5. **Run type checks**: `npm run typecheck`.
-6. **Smoke test**: Run `npm run smoke -- "YOUR_YOUTUBE_URL"` to verify it still works with real data.
-7. **Submit a Pull Request**. Link any related issues in the description.
+5. **Run unit tests**: `npm run test`.
+6. **Run type checks**: `npm run typecheck`.
+7. **Smoke test**: Run `npm run smoke -- "YOUR_YOUTUBE_URL"` to verify it still works with real data.
+8. **Submit a Pull Request**. Link any related issues in the description.
 
 ## Development Setup
 
@@ -40,6 +41,7 @@ The project uses TypeScript and aims for zero runtime dependencies (using built-
 
 - Node version: 18+
 - Build: `npm run build`
+- Unit Tests: `npm run test`
 - Typecheck: `npm run typecheck`
 - Smoke test: `npm run smoke`
 

@@ -365,7 +365,7 @@ function looksRateLimited(html: string): boolean {
   );
 }
 
-function selectTrack(
+export function selectTrack(
   tracks: CaptionTrack[],
   requestedLanguages: string[],
   videoId: string,
@@ -492,7 +492,7 @@ async function fetchTranscriptXml(
   return response.text();
 }
 
-function parseTranscriptXml(xml: string): YouTubeTranscriptSegment[] {
+export function parseTranscriptXml(xml: string): YouTubeTranscriptSegment[] {
   const segments: YouTubeTranscriptSegment[] = [];
 
   for (const matched of xml.matchAll(XML_TEXT_PATTERN)) {
