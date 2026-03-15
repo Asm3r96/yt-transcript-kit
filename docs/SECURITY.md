@@ -12,7 +12,7 @@ We only provide security updates for the latest version of `yt-transcript-kit`.
 
 If you discover a security vulnerability within this project, please do NOT open a public issue. Instead, please report it via the following method:
 
-1. **Email**: (Add your contact email here or use GitHub Security Advisories)
+1. **Email**: [asm3r96@gmail.com](mailto:asm3r96@gmail.com)
 2. **Details**: Provide a detailed description of the vulnerability, including steps to reproduce.
 
 We will acknowledge your report within 48 hours and provide a timeline for a fix.
