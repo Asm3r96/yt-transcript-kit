@@ -1,6 +1,6 @@
 {
   "name": "yt-transcript-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Fetch YouTube transcripts and caption text with a lightweight TypeScript API.",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,6 +25,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "smoke": "tsx scripts/smoke.ts",
+    "release:check": "npm run typecheck && npm run test && npm run build",
+    "preversion": "npm run release:check",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

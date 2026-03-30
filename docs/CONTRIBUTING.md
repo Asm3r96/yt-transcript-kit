@@ -4,7 +4,7 @@ First off, thank you for considering contributing to `yt-transcript-kit`! It's p
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our Code of Conduct (standard contributor covenant).
+By participating in this project, you agree to abide by our [Code of Conduct](../CODE_OF_CONDUCT.md).
 
 ## How Can I Contribute?
 
@@ -35,6 +35,8 @@ By participating in this project, you agree to abide by our Code of Conduct (sta
 7. **Smoke test**: Run `npm run smoke -- "YOUR_YOUTUBE_URL"` to verify it still works with real data.
 8. **Submit a Pull Request**. Link any related issues in the description.
 
+If your change affects public behavior, update `README.md` and `docs/CHANGELOG.md` in the same pull request.
+
 ## Development Setup
 
 The project uses TypeScript and aims for zero runtime dependencies (using built-in `fetch`).
@@ -44,6 +46,7 @@ The project uses TypeScript and aims for zero runtime dependencies (using built-
 - Unit Tests: `npm run test`
 - Typecheck: `npm run typecheck`
 - Smoke test: `npm run smoke`
+- Changelog: update `docs/CHANGELOG.md` for user-visible changes
 
 ## Coding Style
 
