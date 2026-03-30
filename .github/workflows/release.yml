@@ -37,13 +37,22 @@ jobs:
       - name: Run release checks
         run: npm run release:check
 
+      - name: Detect current package version
+        id: package_version
+        run: echo "current=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+
       - name: Configure git author
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Bump package version
+        if: ${{ steps.package_version.outputs.current != inputs.version }}
         run: npm version "${{ inputs.version }}" -m "release: %s"
+
+      - name: Create release tag for current version
+        if: ${{ steps.package_version.outputs.current == inputs.version }}
+        run: git tag "v${{ inputs.version }}"
 
       - name: Push release commit and tag
         run: git push origin HEAD --follow-tags
