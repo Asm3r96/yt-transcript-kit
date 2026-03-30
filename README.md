@@ -1,6 +1,10 @@
 # yt-transcript-kit
 
 [![NPM Version](https://img.shields.io/npm/v/yt-transcript-kit.svg)](https://www.npmjs.com/package/yt-transcript-kit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Issues](https://img.shields.io/github/issues/Asm3r96/yt-transcript-kit)](https://github.com/Asm3r96/yt-transcript-kit/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/Asm3r96/yt-transcript-kit)](https://github.com/Asm3r96/yt-transcript-kit/pulls)
+[![Types](https://img.shields.io/npm/types/yt-transcript-kit)](https://www.npmjs.com/package/yt-transcript-kit)
 
 Lightweight YouTube transcript extraction for apps that want transcript text first, then decide what to do with it. Built with TypeScript and zero runtime dependencies.
 
