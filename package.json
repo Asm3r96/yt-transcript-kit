@@ -6,7 +6,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "yt-transcript-kit": "./dist/cli.js"
+    "yt-transcript-kit": "dist/cli.js"
   },
   "sideEffects": false,
   "exports": {
