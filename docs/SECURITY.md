@@ -6,7 +6,8 @@ We only provide security updates for the latest version of `yt-transcript-kit`.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| v0.1.x  | :white_check_mark: |
+| Latest release | :white_check_mark: |
+| Older releases | :x: |
 
 ## Reporting a Vulnerability
 
