@@ -5,6 +5,8 @@ import {
   fetchYouTubeTranscript,
   formatTranscript,
   searchTranscript,
+  searchYouTube,
+  searchYouTubeWithTranscripts,
 } from './index.js';
 
 interface CliOptions {
@@ -14,13 +16,32 @@ interface CliOptions {
   chunks?: boolean;
   maxChars?: number;
   concurrency?: number;
+  maxResults?: number;
+  transcripts?: boolean;
 }
 
 function printHelp(): void {
-  console.log(`yt-transcript-kit\n\nUsage:\n  yt-transcript-kit <url-or-video-id> [options]\n  yt-transcript-kit batch <file> [options]\n\nOptions:\n  --format <txt|json|markdown>   Output format (default: txt)\n  --languages <de,en>            Preferred languages\n  --search <query>               Search query in transcript\n  --chunks                        Output chunks instead of full transcript\n  --max-chars <n>                Max chars per chunk\n  --concurrency <n>              Batch concurrency (default: 3)\n  --help                         Show help\n`);
+  console.log(`yt-transcript-kit
+
+Usage:
+  yt-transcript-kit <url-or-video-id> [options]
+  yt-transcript-kit batch <file> [options]
+  yt-transcript-kit search <query> [options]
+
+Options:
+  --format <txt|json|markdown>   Output format (default: txt)
+  --languages <de,en>            Preferred languages
+  --search <query>               Search query in transcript
+  --chunks                        Output chunks instead of full transcript
+  --max-chars <n>                Max chars per chunk
+  --concurrency <n>              Batch concurrency (default: 3)
+  --max-results <n>              Max search results (default: 20)
+  --transcripts                  Also fetch transcripts for search results
+  --help                         Show help
+`);
 }
 
-function parseArgs(args: string[]): { command: 'single' | 'batch' | 'help'; input?: string; options: CliOptions } {
+function parseArgs(args: string[]): { command: 'single' | 'batch' | 'search' | 'help'; input?: string; options: CliOptions } {
   if (!args.length || args.includes('--help') || args.includes('-h')) {
     return { command: 'help', options: { format: 'txt' } };
   }
@@ -62,6 +83,13 @@ function parseArgs(args: string[]): { command: 'single' | 'batch' | 'help'; inpu
         options.concurrency = Number.parseInt(value ?? '3', 10);
         i += 1;
         break;
+      case '--max-results':
+        options.maxResults = Number.parseInt(value ?? '20', 10);
+        i += 1;
+        break;
+      case '--transcripts':
+        options.transcripts = true;
+        break;
       default:
         break;
     }
@@ -71,7 +99,47 @@ function parseArgs(args: string[]): { command: 'single' | 'batch' | 'help'; inpu
     return { command: 'batch', input: positionals[1], options };
   }
 
+  if (positionals[0] === 'search') {
+    return { command: 'search', input: positionals.slice(1).join(' '), options };
+  }
+
   return { command: 'single', input: positionals[0], options };
+}
+
+function printSearchResults(results: Array<Record<string, unknown>>, format: string): void {
+  if (format === 'json') {
+    console.log(JSON.stringify(results, null, 2));
+    return;
+  }
+
+  for (const result of results) {
+    const title = result.title as string;
+    const url = result.url as string;
+    const channel = result.channelName as string;
+    const duration = result.duration as string | null;
+    const views = result.viewCount as string | null;
+    const published = result.publishedAt as string | null;
+
+    const metaParts: string[] = [];
+    if (duration) metaParts.push(duration);
+    if (views) metaParts.push(views);
+    if (published) metaParts.push(published);
+
+    const meta = metaParts.length ? ` (${metaParts.join(' · ')})` : '';
+    console.log(`${title}${meta}`);
+    console.log(`  ${url}`);
+    if (channel) console.log(`  Channel: ${channel}`);
+    if (result.description) console.log(`  ${(result.description as string).slice(0, 120)}${(result.description as string).length > 120 ? '...' : ''}`);
+
+    if (result.transcriptError) {
+      console.log(`  Transcript: ✖ ${result.transcriptError}`);
+    } else if (result.transcript) {
+      const t = result.transcript as { fullText?: string };
+      const preview = t.fullText ? `${t.fullText.slice(0, 200).replace(/\s+/g, ' ').trim()}...` : '✔ Available';
+      console.log(`  Transcript: ${preview}`);
+    }
+    console.log();
+  }
 }
 
 async function main(): Promise<void> {
@@ -90,7 +158,7 @@ async function main(): Promise<void> {
   if (parsed.command === 'batch') {
     const { readFile } = await import('node:fs/promises');
     const body = await readFile(parsed.input, 'utf8');
-    const inputs = body.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const inputs = body.split(/\r?\n/).map((line: string) => line.trim()).filter(Boolean);
     const batch = await fetchManyYouTubeTranscripts(inputs, {
       languages: parsed.options.languages,
       concurrency: parsed.options.concurrency,
@@ -105,6 +173,33 @@ async function main(): Promise<void> {
           console.log(`✖ ${item.input}: ${item.error.code}`);
         }
       }
+    }
+    return;
+  }
+
+  if (parsed.command === 'search') {
+    try {
+      const maxResults = parsed.options.maxResults ?? 20;
+      if (parsed.options.transcripts) {
+        const results = await searchYouTubeWithTranscripts({
+          query: parsed.input,
+          maxResults,
+          includeTranscripts: true,
+          transcriptOptions: {
+            languages: parsed.options.languages,
+          },
+        });
+        printSearchResults(results as unknown as Array<Record<string, unknown>>, parsed.options.format);
+      } else {
+        const results = await searchYouTube({
+          query: parsed.input,
+          maxResults,
+        });
+        printSearchResults(results as unknown as Array<Record<string, unknown>>, parsed.options.format);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
     }
     return;
   }

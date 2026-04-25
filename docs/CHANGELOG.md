@@ -9,6 +9,20 @@ Entries stay under `Unreleased` until the next version is cut.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-25
+
+### Added
+- `searchYouTube(...)` for searching YouTube videos without an API key.
+- `searchYouTubeWithTranscripts(...)` for searching and optionally fetching transcripts for each result.
+- New CLI `search <query>` command with `--max-results` and `--transcripts` flags.
+- `EMPTY_QUERY` and `SEARCH_FAILED` error codes to `YouTubeTranscriptErrorCode`.
+
+### Changed
+- Refactored monolithic `src/index.ts` into modular files: `src/errors.ts`, `src/utils.ts`, and `src/search.ts`.
+- Updated package description and keywords to reflect search capabilities.
+
+
+
 ## [0.2.0] - 2026-03-30
 
 ### Added

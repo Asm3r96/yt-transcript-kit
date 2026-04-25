@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { 
-  extractVideoId, 
+import {
+  extractVideoId,
   parseTranscriptXml,
-  YouTubeTranscriptError 
+  YouTubeTranscriptError,
+  searchYouTube,
 } from '../src/index.js';
+import { extractBalancedJson, looksRateLimited } from '../src/utils.js';
 
 test('extractVideoId - handles various URL formats', () => {
   const cases = [
@@ -64,4 +66,52 @@ test('parseTranscriptXml - decodes HTML entities', () => {
   const xml = `<transcript><text start="0" dur="1">It&apos;s &quot;fine&quot; &amp; good</text></transcript>`;
   const segments = parseTranscriptXml(xml);
   assert.strictEqual(segments[0].text, 'It\'s "fine" & good');
+});
+
+test('extractBalancedJson - parses balanced braces correctly', () => {
+  const source = 'prefix{"a":1,"b":{"c":2}}suffix';
+  const result = extractBalancedJson(source, 6);
+  assert.strictEqual(result, '{"a":1,"b":{"c":2}}');
+});
+
+test('extractBalancedJson - handles nested objects and strings with braces', () => {
+  const source = '{"text":"hello {world}","nested":{"deep":true}}';
+  const result = extractBalancedJson(source, 0);
+  assert.strictEqual(result, source);
+});
+
+test('extractBalancedJson - returns null for unbalanced input', () => {
+  const source = '{"a":1';
+  const result = extractBalancedJson(source, 0);
+  assert.strictEqual(result, null);
+});
+
+test('looksRateLimited - detects rate limit indicators', () => {
+  assert.strictEqual(looksRateLimited('g-recaptcha'), true);
+  assert.strictEqual(looksRateLimited('Our systems have detected unusual traffic'), true);
+  assert.strictEqual(looksRateLimited('normal youtube page'), false);
+});
+
+test('YouTubeTranscriptError - supports search error codes', () => {
+  const emptyQueryError = new YouTubeTranscriptError('EMPTY_QUERY', 'Query cannot be empty.');
+  assert.strictEqual(emptyQueryError.code, 'EMPTY_QUERY');
+  assert.strictEqual(emptyQueryError.message, 'Query cannot be empty.');
+  assert.strictEqual(emptyQueryError.name, 'YouTubeTranscriptError');
+
+  const searchFailedError = new YouTubeTranscriptError('SEARCH_FAILED', 'Could not parse results.');
+  assert.strictEqual(searchFailedError.code, 'SEARCH_FAILED');
+});
+
+test('searchYouTube - throws EMPTY_QUERY for empty string', async () => {
+  await assert.rejects(
+    () => searchYouTube({ query: '' }),
+    (err: unknown) => err instanceof YouTubeTranscriptError && (err as YouTubeTranscriptError).code === 'EMPTY_QUERY',
+  );
+});
+
+test('searchYouTube - throws EMPTY_QUERY for whitespace-only query', async () => {
+  await assert.rejects(
+    () => searchYouTube({ query: '   ' }),
+    (err: unknown) => err instanceof YouTubeTranscriptError && (err as YouTubeTranscriptError).code === 'EMPTY_QUERY',
+  );
 });

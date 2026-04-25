@@ -1,35 +1,10 @@
-export type YouTubeTranscriptErrorCode =
-  | 'INVALID_VIDEO_ID'
-  | 'VIDEO_UNAVAILABLE'
-  | 'RATE_LIMITED'
-  | 'NO_TRANSCRIPT'
-  | 'LANGUAGE_NOT_AVAILABLE'
-  | 'REQUEST_FAILED';
+export * from './search.js';
+export { YouTubeTranscriptError, type YouTubeTranscriptErrorCode } from './errors.js';
 
-export class YouTubeTranscriptError extends Error {
-  readonly code: YouTubeTranscriptErrorCode;
-  readonly videoId?: string;
-  readonly details?: Record<string, unknown>;
-
-  constructor(
-    code: YouTubeTranscriptErrorCode,
-    message: string,
-    options: {
-      videoId?: string;
-      details?: Record<string, unknown>;
-      cause?: unknown;
-    } = {},
-  ) {
-    super(message);
-    this.name = 'YouTubeTranscriptError';
-    this.code = code;
-    this.videoId = options.videoId;
-    this.details = options.details;
-    if (options.cause !== undefined) {
-      (this as Error & { cause?: unknown }).cause = options.cause;
-    }
-  }
-}
+import { YouTubeTranscriptError } from './errors.js';
+import { DEFAULT_USER_AGENT, extractBalancedJson, looksRateLimited } from './utils.js';
+import { searchYouTube } from './search.js';
+import type { SearchYouTubeOptions, YouTubeSearchResult } from './search.js';
 
 export interface YouTubeTranscriptSegment {
   text: string;
@@ -136,8 +111,6 @@ interface PlayerResponseShape {
 
 const WATCH_URL = 'https://www.youtube.com/watch?v=';
 const PLAYER_URL = 'https://www.youtube.com/youtubei/v1/player';
-const DEFAULT_USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36';
 const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const URL_VIDEO_ID_PATTERN =
   /(?:v=|\/embed\/|\/shorts\/|\/live\/|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[?&/]|$)/i;
@@ -365,46 +338,6 @@ function extractInitialPlayerResponse(html: string): PlayerResponseShape | null 
   }
 }
 
-function extractBalancedJson(source: string, startIndex: number): string | null {
-  let braceCount = 0;
-  let inString = false;
-  let escape = false;
-
-  for (let index = startIndex; index < source.length; index += 1) {
-    const char = source[index];
-
-    if (escape) {
-      escape = false;
-      continue;
-    }
-
-    if (char === '\\') {
-      escape = true;
-      continue;
-    }
-
-    if (char === '"') {
-      inString = !inString;
-      continue;
-    }
-
-    if (inString) {
-      continue;
-    }
-
-    if (char === '{') {
-      braceCount += 1;
-    } else if (char === '}') {
-      braceCount -= 1;
-      if (braceCount === 0) {
-        return source.slice(startIndex, index + 1);
-      }
-    }
-  }
-
-  return null;
-}
-
 function extractInnertubeApiKey(html: string): string | null {
   const matched =
     html.match(/"INNERTUBE_API_KEY":"([^"]+)"/) ??
@@ -422,13 +355,6 @@ function extractTitleFromWatchHtml(html: string): string | null {
     .replace(/\s+-\s+YouTube\s*$/i, '')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-function looksRateLimited(html: string): boolean {
-  return (
-    html.includes('g-recaptcha') ||
-    html.includes('Our systems have detected unusual traffic')
-  );
 }
 
 export function selectTrack(
@@ -1041,4 +967,58 @@ export async function fetchManyYouTubeTranscripts(
 
   await Promise.all(Array.from({ length: Math.min(concurrency, inputs.length) }, () => worker()));
   return results;
+}
+
+export interface SearchYouTubeResultWithTranscript extends YouTubeSearchResult {
+  transcript?: YouTubeTranscriptResult;
+  transcriptError?: string;
+}
+
+/**
+ * Search YouTube and optionally fetch transcripts for each result.
+ * Be careful with `includeTranscripts` — it makes N additional network requests.
+ *
+ * @example
+ * ```ts
+ * const results = await searchYouTubeWithTranscripts({
+ *   query: 'node.js tutorial',
+ *   maxResults: 5,
+ *   includeTranscripts: true,
+ * });
+ * ```
+ */
+export async function searchYouTubeWithTranscripts(
+  options: SearchYouTubeOptions & { includeTranscripts: true; transcriptOptions?: Omit<FetchYouTubeTranscriptOptions, 'fetchImpl' | 'signal'> },
+): Promise<SearchYouTubeResultWithTranscript[]>;
+export async function searchYouTubeWithTranscripts(
+  options: SearchYouTubeOptions & { transcriptOptions?: Omit<FetchYouTubeTranscriptOptions, 'fetchImpl' | 'signal'> },
+): Promise<YouTubeSearchResult[]>;
+export async function searchYouTubeWithTranscripts(
+  options: SearchYouTubeOptions & { includeTranscripts?: boolean; transcriptOptions?: Omit<FetchYouTubeTranscriptOptions, 'fetchImpl' | 'signal'> },
+): Promise<SearchYouTubeResultWithTranscript[] | YouTubeSearchResult[]> {
+  const results = await searchYouTube(options);
+
+  if (!options.includeTranscripts) {
+    return results;
+  }
+
+  const withTranscripts: SearchYouTubeResultWithTranscript[] = await Promise.all(
+    results.map(async result => {
+      try {
+        const transcript = await fetchYouTubeTranscript(result.videoId, {
+          fetchImpl: options.fetchImpl,
+          signal: options.signal,
+          ...options.transcriptOptions,
+        });
+        return { ...result, transcript };
+      } catch (error) {
+        return {
+          ...result,
+          transcriptError: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }),
+  );
+
+  return withTranscripts;
 }
