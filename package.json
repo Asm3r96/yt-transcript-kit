@@ -1,6 +1,6 @@
 {
   "name": "yt-transcript-kit",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Fetch YouTube transcripts, captions, and search results with a lightweight TypeScript API — no API key required.",
   "type": "module",
   "main": "./dist/index.js",

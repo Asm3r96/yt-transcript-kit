@@ -6,7 +6,7 @@
 [![Pull Requests](https://img.shields.io/github/issues-pr/Asm3r96/yt-transcript-kit)](https://github.com/Asm3r96/yt-transcript-kit/pulls)
 [![Types](https://img.shields.io/npm/types/yt-transcript-kit)](https://www.npmjs.com/package/yt-transcript-kit)
 
-Lightweight YouTube transcript extraction for apps that want transcript text first, then decide what to do with it. Built with TypeScript and zero runtime dependencies.
+Lightweight YouTube transcript extraction and YouTube search for apps that want video text and metadata first, then decide what to do with it. Built with TypeScript and zero runtime dependencies.
 
 ## Install
 
@@ -20,13 +20,77 @@ Use `npx yt-transcript-kit --help` for the CLI without installing globally.
 ## Quick Start
 
 ```ts
-import { fetchYouTubeTranscript } from 'yt-transcript-kit';
+import { fetchYouTubeTranscript, searchYouTube } from 'yt-transcript-kit';
 
 const result = await fetchYouTubeTranscript('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 console.log(result.title, result.fullText);
+
+const videos = await searchYouTube({ query: 'typescript tutorial', maxResults: 5 });
+console.log(videos[0].title, videos[0].url);
 ```
 
 ## New APIs
+
+### YouTube Search
+
+Search YouTube videos without a YouTube Data API key.
+
+```ts
+import { searchYouTube } from 'yt-transcript-kit';
+
+const results = await searchYouTube({
+  query: 'node.js streams',
+  maxResults: 10,
+  hl: 'en',
+});
+
+for (const video of results) {
+  console.log(video.title);
+  console.log(video.channelName, video.duration, video.viewCount);
+  console.log(video.url);
+}
+```
+
+Each result includes:
+
+- `videoId`
+- `title`
+- `channelName`
+- `channelId`
+- `publishedAt`
+- `viewCount`
+- `duration`
+- `durationSeconds`
+- `thumbnailUrl`
+- `description`
+- `url`
+
+### Search With Transcripts
+
+Fetch transcripts for search results in one call.
+
+```ts
+import { searchYouTubeWithTranscripts } from 'yt-transcript-kit';
+
+const results = await searchYouTubeWithTranscripts({
+  query: 'react server components',
+  maxResults: 3,
+  includeTranscripts: true,
+  transcriptOptions: {
+    languages: ['en'],
+  },
+});
+
+for (const video of results) {
+  if (video.transcript) {
+    console.log(video.title, video.transcript.fullText.slice(0, 200));
+  } else {
+    console.warn(video.title, video.transcriptError);
+  }
+}
+```
+
+`includeTranscripts: true` makes one transcript request per search result, so keep `maxResults` modest for CLI tools and server routes.
 
 ### Transcript Search
 
@@ -146,6 +210,9 @@ npx yt-transcript-kit <url> --search "keyword"
 npx yt-transcript-kit <url> --chunks --max-chars 4000
 npx yt-transcript-kit batch urls.txt --format json
 npx yt-transcript-kit batch urls.txt --concurrency 3
+npx yt-transcript-kit search "typescript tutorial" --max-results 5
+npx yt-transcript-kit search "typescript tutorial" --format json
+npx yt-transcript-kit search "typescript tutorial" --transcripts --languages en
 ```
 
 Use `--help` to print command help.
@@ -155,10 +222,12 @@ Typical CLI uses:
 - `--search` prints matching transcript segments with their segment index.
 - `--chunks` prints chunked transcript text, or structured JSON when combined with `--format json`.
 - `batch <file> --format json` returns per-input success or failure records.
+- `search <query>` prints video metadata and URLs from YouTube search results.
+- `search <query> --transcripts` also attempts to fetch a transcript for each returned video.
 
 ## Error Codes
 
-`INVALID_VIDEO_ID`, `VIDEO_UNAVAILABLE`, `RATE_LIMITED`, `NO_TRANSCRIPT`, `LANGUAGE_NOT_AVAILABLE`, `REQUEST_FAILED`.
+`INVALID_VIDEO_ID`, `VIDEO_UNAVAILABLE`, `RATE_LIMITED`, `NO_TRANSCRIPT`, `LANGUAGE_NOT_AVAILABLE`, `REQUEST_FAILED`, `EMPTY_QUERY`, `SEARCH_FAILED`.
 
 ## Environment Notes
 

@@ -9,6 +9,12 @@ Entries stay under `Unreleased` until the next version is cut.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-25
+
+### Changed
+- Documented `searchYouTube(...)`, `searchYouTubeWithTranscripts(...)`, CLI `search <query>`, and new search error codes in the README.
+- Updated architecture docs with the YouTube search parsing flow and limitations.
+
 ## [0.3.0] - 2026-04-25
 
 ### Added
